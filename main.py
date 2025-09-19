@@ -16,6 +16,12 @@ from google import genai
 from google.genai import types
 from typing import List, Tuple
 
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+SENDER = os.environ["SENDER"]
+RECEIVER = os.environ["RECEIVER"] 
+
+CREDENTIALS_FILE = "credentials.json"
+TOKEN_FILE = "token.json"
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
 

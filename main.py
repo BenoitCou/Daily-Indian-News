@@ -92,7 +92,7 @@ def generate_press_review():
     user_prompt = (
         f"Ecris une revue de presse en francais et en HTML sur les actualités les plus importantes des deux derniers jours (actualites publiées après {date}) pour les pays suivants : "
         "L'Inde, le Pakistan, le Bangladesh, le Népal, le Bouthan, le Sri Lanka et les Maldives."
-        "Tu me donneras une actualite d'un des pays mentionnés ci-dessus pour chacun des themes suivants : "
+        "Tu me donneras une actualite d'un des pays mentionnés ci-dessus pour chacun des thèmes suivants : "
         "1. Unité géographique, hiérarchies et inégalités sociales"
         "2. Ruralités et urbanités en recomposition"
         "3. Diversité et complémentarité des systèmes productifs"
@@ -106,7 +106,7 @@ def generate_press_review():
         "Utilise un langage formel et objectif, sans opinions personnelles."
         "N'utilise que des sources fiables et récentes, en citant tes sources, et verifie bien l'ensemble de ce que tu dis."
         f"Tu commenceras toujours ton rapport par 'Bonjour Mademoiselle Dupouy (<3), voici votre revue de presse des mondes indiens (depuis le {date})' en italique."
-        "Tu ne feras pas d'intruduction et n'écriras pas de conclusion, et tu veiullerasi surtout a inclure les liens web des sources que tu utilises."
+        "Tu ne feras jamais d'introduction et n'écriras jamais de conclusion."
     )
 
 

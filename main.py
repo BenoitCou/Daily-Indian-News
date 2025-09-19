@@ -1,3 +1,19 @@
+from __future__ import print_function
+import os
+import re
+import base64
+import mimetypes
+from email.message import EmailMessage
+
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+from datetime import datetime, timedelta, timezone
+from google import genai
+from google.genai import types
+from typing import List, Tuple
+
 GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 CREDENTIALS_FILE = "credentials.json"

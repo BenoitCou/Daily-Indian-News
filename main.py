@@ -16,6 +16,8 @@ from google import genai
 from google.genai import types
 from typing import List, Tuple
 
+
+
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 SENDER = os.environ["SENDER"]
 RECEIVER = os.environ["RECEIVER"] 
@@ -57,13 +59,9 @@ def get_service():
 
 def build_message(sender, to_list, subject, body_text=None, body_html=None, attachment_path=None):
     msg = EmailMessage()
-    # to_list = ["a@ex.com", "b@ex.com"]
     msg["To"] = COMMASPACE.join(to_list)
     msg["From"] = sender
     msg["Subject"] = subject
-
-    # Version texte (fallback)
-    #msg.set_content(body_text or "Version texte.", subtype="plain", charset="utf-8")
         
     msg.add_alternative(body_html, subtype="html", charset="utf-8")
 
@@ -87,48 +85,7 @@ def send_email(sender, to, subject, body_text=None, body_html=None, attachment_p
     message = build_message(sender, to, subject, body_text, body_html, attachment_path)
     sent = service.users().messages().send(userId="me", body=message).execute()
     print(f"Message envoyé. ID: {sent['id']}")
-
-
-def generate_press_review_OLD():
-    system_instruction = (
-        "You are a meticulous and precise news editor. Always use Google Search grounding, "
-        "include inline source links, and avoid unverified claims."
-    )
-
-    user_prompt = (
-        f"Ecris une revue de presse en francais et en HTML sur les actualités les plus importantes des deux derniers jours (actualites publiées après {date}) pour les pays suivants : "
-        "L'Inde, le Pakistan, le Bangladesh, le Népal, le Bouthan, le Sri Lanka et les Maldives. \n"
-        "Tu me donneras une actualité d'un des pays mentionnés ci-dessus pour chacun des thèmes suivants : "
-        "1. Unité géographique, hiérarchies et inégalités sociales"
-        "2. Ruralités et urbanités en recomposition"
-        "3. Diversité et complémentarité des systèmes productifs"
-        "4. Territoires politiques et circulations"
-        "Pour chacun de ces thèmes (que tu mettras en gras et en police 12), tu presenteras l'actualité la plus importante de la maniere suivante:" 
-        "Tu commenceras par le nom de pays suivi du titre de l'actualité (En police 10 et en italique) (Nom de pays : Titre de l'actualité)"
-        "Tu feras un resumé factuel de l'actualité en 3-4 phrases maximum en police 10 (Actualité (en italique) : Description de l'actualité (en police 10))"
-        "Tu presenteras le contexte de l'actualité en 1-2 phrases maximum en police 10 (Contexte (en italique) : Contexte de l'actualité (en police 10))"
-        "Tu concluras par une analyse des enjeux en 2-3 phrases maximum en police 10 (Enjeux (en italique) : Enjeu de l'actualité (en police 10))"
-        "Tu sauteras une ligne entre Actualité, Contexte et Enjeux, et tu sauteras deux lignes entre chaque actualité."
-        "Utilise un langage formel et objectif, sans opinions personnelles."
-        "N'utilise que des sources fiables et récentes, en citant tes sources, et verifie bien l'ensemble de ce que tu dis."
-        f"Tu commenceras toujours ton rapport par 'Bonjour Mademoiselle Dupouy (<3), voici votre revue de presse des mondes indiens (depuis le {date})' en italique HTML."
-        "Tu ne feras jamais d'introduction et n'écriras jamais de conclusion."
-    )
-
-
-    config = types.GenerateContentConfig(
-        system_instruction=system_instruction,
-        tools=[GROUNDING_TOOL],
-        temperature=0.2,
-    )
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=user_prompt,
-        config=config,
-    )
-
-    return response
+    
 
 def generate_press_review():
     system_instruction = (
@@ -137,7 +94,7 @@ def generate_press_review():
         "- Ne produire que du HTML valide (aucun markdown, aucun texte hors balises)."
         "- Suivre STRICTEMENT le gabarit HTML et le style inline donnés ci-dessous (mêmes balises, mêmes styles, mêmes <br>)."
         "- Éviter toute opinion ; n’écrire que des faits vérifiables et récents."
-        "- N’insérer AUCUN lien toi-même : je rajoute les [source] après coup."
+        "- Fournir des liens web de sources fiables pour chaque fait rapporté."
         "- Éviter toute introduction/conclusion autre que la ligne d’ouverture demandée."
     )
 
@@ -157,7 +114,6 @@ def generate_press_review():
                 • “Actualité” (3–4 phrases), police 10pt, avec le label « <i>Actualité</i> : »  
                 • “Contexte” (1–2 phrases), police 10pt, avec le label « <i>Contexte</i> : »  
                 • “Enjeux” (2–3 phrases), police 10pt, avec le label « <i>Enjeux</i> : »
-            - N’insère AUCUN lien : je les ajouterai ensuite (je chercherai « [source] » à la fin de chaque paragraphe).
             - Style : langage formel, objectif. N’écris aucun avertissement.
 
         Gabarit HTML STRICT (reproduis à l’identique les balises, styles, <br> et ponctuation ; remplace seulement les contenus entre crochets) :
@@ -248,13 +204,11 @@ if __name__ == "__main__":
     text = resp.candidates[0].content.parts[0].text
     dico = create_dico(resp)
     body_html = add_sources(text, dico)
-    body_text = re.sub(r'<[^>]+>', '', body_html)
 
     send_email(
         sender=SENDER,
         to=RECEIVER,
         subject="Revue de presse des Mondes indiens – " + ajd,
-        body_text=body_text,
         body_html=body_html,
         attachment_path=None
     )

@@ -1,4 +1,12 @@
 GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
+SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
+CREDENTIALS_FILE = "credentials.json"
+TOKEN_FILE = "token.json"
+
+SENDER = os.environ["SENDER"]
+RECEIVER = os.environ["RECEIVER"]
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+
 
 date = (datetime.now(timezone.utc) - timedelta(days=2)).date().isoformat()
 ajd =  datetime.now().date().isoformat() 

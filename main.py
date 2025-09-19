@@ -4,6 +4,7 @@ import re
 import base64
 import mimetypes
 from email.message import EmailMessage
+import html
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -125,11 +126,14 @@ def generate_press_review():
     return response
 
 def add_sources(text: str, mapping: dict) -> str:
-    for sentence, url in mapping.items():
-        if sentence in text:
-            for url in mapping[sentence]:
-                replacement = f"{sentence} <a href={url} target='_blank'>[source]</a>"
-                text = text.replace(sentence, replacement)
+    for sentence, urls in mapping.items():
+        safe_sentence = html.escape(sentence, quote=False)
+        sources_html = " ".join(
+            f"<a href=\"{html.escape(u, quote=True)}\" target=\"_blank\" rel=\"noopener noreferrer\">[source]</a>"
+            for u in urls
+        )
+        replacement = f"{safe_sentence} {sources_html}"
+        text = text.replace(sentence, replacement, 1)
     return text
 
 def create_dico(resp):

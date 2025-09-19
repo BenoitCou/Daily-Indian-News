@@ -3,8 +3,9 @@ import os
 import re
 import base64
 import mimetypes
-from email.message import EmailMessage
 import html
+from email.message import EmailMessage
+from email.utils import COMMASPACE
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -15,15 +16,8 @@ from google import genai
 from google.genai import types
 from typing import List, Tuple
 
-GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-CREDENTIALS_FILE = "credentials.json"
-TOKEN_FILE = "token.json"
-
-SENDER = os.environ["SENDER"]
-RECEIVER = os.environ["RECEIVER"]
-GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-
+GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
 
 date = (datetime.now(timezone.utc) - timedelta(days=2)).date().isoformat()
 ajd =  datetime.now().date().isoformat() 
@@ -54,15 +48,18 @@ def get_service():
 
     return build("gmail", "v1", credentials=creds)
 
-def build_message(sender, to, subject, body_text=None, body_html=None, attachment_path=None):
+
+def build_message(sender, to_list, subject, body_text=None, body_html=None, attachment_path=None):
     msg = EmailMessage()
-    msg["To"] = to
+    # to_list = ["a@ex.com", "b@ex.com"]
+    msg["To"] = COMMASPACE.join(to_list)
     msg["From"] = sender
     msg["Subject"] = subject
-    msg.set_content(body_text or "Version texte.")
 
-    if body_html:  # HTML visible dans Gmail
-        msg.add_alternative(body_html, subtype="html")
+    # Version texte (fallback)
+    #msg.set_content(body_text or "Version texte.", subtype="plain", charset="utf-8")
+        
+    msg.add_alternative(body_html, subtype="html", charset="utf-8")
 
     if attachment_path:
         ctype, encoding = mimetypes.guess_type(attachment_path)
@@ -78,13 +75,15 @@ def build_message(sender, to, subject, body_text=None, body_html=None, attachmen
     encoded_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
     return {"raw": encoded_message}
 
+
 def send_email(sender, to, subject, body_text=None, body_html=None, attachment_path=None):
     service = get_service()
     message = build_message(sender, to, subject, body_text, body_html, attachment_path)
     sent = service.users().messages().send(userId="me", body=message).execute()
     print(f"Message envoyé. ID: {sent['id']}")
 
-def generate_press_review():
+
+def generate_press_review_OLD():
     system_instruction = (
         "You are a meticulous and precise news editor. Always use Google Search grounding, "
         "include inline source links, and avoid unverified claims."
@@ -92,8 +91,8 @@ def generate_press_review():
 
     user_prompt = (
         f"Ecris une revue de presse en francais et en HTML sur les actualités les plus importantes des deux derniers jours (actualites publiées après {date}) pour les pays suivants : "
-        "L'Inde, le Pakistan, le Bangladesh, le Népal, le Bouthan, le Sri Lanka et les Maldives."
-        "Tu me donneras une actualite d'un des pays mentionnés ci-dessus pour chacun des thèmes suivants : "
+        "L'Inde, le Pakistan, le Bangladesh, le Népal, le Bouthan, le Sri Lanka et les Maldives. \n"
+        "Tu me donneras une actualité d'un des pays mentionnés ci-dessus pour chacun des thèmes suivants : "
         "1. Unité géographique, hiérarchies et inégalités sociales"
         "2. Ruralités et urbanités en recomposition"
         "3. Diversité et complémentarité des systèmes productifs"
@@ -106,8 +105,99 @@ def generate_press_review():
         "Tu sauteras une ligne entre Actualité, Contexte et Enjeux, et tu sauteras deux lignes entre chaque actualité."
         "Utilise un langage formel et objectif, sans opinions personnelles."
         "N'utilise que des sources fiables et récentes, en citant tes sources, et verifie bien l'ensemble de ce que tu dis."
-        f"Tu commenceras toujours ton rapport par 'Bonjour Mademoiselle Dupouy (<3), voici votre revue de presse des mondes indiens (depuis le {date})' en italique."
+        f"Tu commenceras toujours ton rapport par 'Bonjour Mademoiselle Dupouy (<3), voici votre revue de presse des mondes indiens (depuis le {date})' en italique HTML."
         "Tu ne feras jamais d'introduction et n'écriras jamais de conclusion."
+    )
+
+
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        tools=[GROUNDING_TOOL],
+        temperature=0.2,
+    )
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=user_prompt,
+        config=config,
+    )
+
+    return response
+
+def generate_press_review():
+    system_instruction = (
+        "Tu es un éditeur de presse méticuleux. Tu dois :"
+        "- T’appuyer sur Google Search Grounding."
+        "- Ne produire que du HTML valide (aucun markdown, aucun texte hors balises)."
+        "- Suivre STRICTEMENT le gabarit HTML et le style inline donnés ci-dessous (mêmes balises, mêmes styles, mêmes <br>)."
+        "- Éviter toute opinion ; n’écrire que des faits vérifiables et récents."
+        "- N’insérer AUCUN lien toi-même : je rajoute les [source] après coup."
+        "- Éviter toute introduction/conclusion autre que la ligne d’ouverture demandée."
+    )
+
+    user_prompt = (f"""
+        Écris une revue de presse en français, en HTML SEULEMENT, sur les actualités publiées après {date} pour les pays suivants : 
+        L'Inde, le Pakistan, le Bangladesh, le Népal, le Bouthan, le Sri Lanka et les Maldives.
+
+        Règles de contenu :
+            - Produis exactement 4 rubriques, dans cet ordre et avec cette numérotation :
+                1. Unité géographique, hiérarchies et inégalités sociales
+                2. Ruralités et urbanités en recomposition
+                3. Diversité et complémentarité des systèmes productifs
+                4. Territoires politiques et circulations
+            - Pour CHAQUE rubrique, choisis 1 actualité (la plus importante) concernant l’un des pays listés (un pays peut revenir dans plusieurs rubriques si pertinent).
+            - Pour CHAQUE rubrique, fournis STRICTEMENT les 3 paragraphes suivants :
+                • Titre (pays + titre), en italique, police 10pt  
+                • “Actualité” (3–4 phrases), police 10pt, avec le label « <i>Actualité</i> : »  
+                • “Contexte” (1–2 phrases), police 10pt, avec le label « <i>Contexte</i> : »  
+                • “Enjeux” (2–3 phrases), police 10pt, avec le label « <i>Enjeux</i> : »
+            - N’insère AUCUN lien : je les ajouterai ensuite (je chercherai « [source] » à la fin de chaque paragraphe).
+            - Style : langage formel, objectif. N’écris aucun avertissement.
+
+        Gabarit HTML STRICT (reproduis à l’identique les balises, styles, <br> et ponctuation ; remplace seulement les contenus entre crochets) :
+
+        <i>Bonjour Mademoiselle Dupouy (&lt;3), voici votre revue de presse des mondes indiens (depuis le {date})</i>
+        <br><br>
+
+        <p style="font-size:12pt; font-weight:bold;">1. Unité géographique, hiérarchies et inégalités sociales</p>
+        <p style="font-size:10pt; font-style:italic;">[PAYS] : [TITRE DE L’ACTUALITÉ]</p>
+        <p style="font-size:10pt;"><i>Actualité</i> : [Résumé factuel en 3–4 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Contexte</i> : [Contexte en 1–2 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Enjeux</i> : [Enjeux en 2–3 phrases].</p>
+        <br><br>
+
+        <p style="font-size:12pt; font-weight:bold;">2. Ruralités et urbanités en recomposition</p>
+        <p style="font-size:10pt; font-style:italic;">[PAYS] : [TITRE DE L’ACTUALITÉ]</p>
+        <p style="font-size:10pt;"><i>Actualité</i> : [Résumé factuel en 3–4 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Contexte</i> : [Contexte en 1–2 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Enjeux</i> : [Enjeux en 2–3 phrases].</p>
+        <br><br>
+
+        <p style="font-size:12pt; font-weight:bold;">3. Diversité et complémentarité des systèmes productifs</p>
+        <p style="font-size:10pt; font-style:italic;">[PAYS] : [TITRE DE L’ACTUALITÉ]</p>
+        <p style="font-size:10pt;"><i>Actualité</i> : [Résumé factuel en 3–4 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Contexte</i> : [Contexte en 1–2 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Enjeux</i> : [Enjeux en 2–3 phrases].</p>
+        <br><br>
+
+        <p style="font-size:12pt; font-weight:bold;">4. Territoires politiques et circulations</p>
+        <p style="font-size:10pt; font-style:italic;">[PAYS] : [TITRE DE L’ACTUALITÉ]</p>
+        <p style="font-size:10pt;"><i>Actualité</i> : [Résumé factuel en 3–4 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Contexte</i> : [Contexte en 1–2 phrases].</p>
+        <br>
+        <p style="font-size:10pt;"><i>Enjeux</i> : [Enjeux en 2–3 phrases].</p>
+
+        Contraintes de sortie :
+            - NE RENDS QUE le HTML final (pas de backticks, pas de préambule, pas de commentaire).
+            - Respecte à la lettre les styles et la ponctuation (espaces insécables inutiles interdits).
+    """
     )
 
 

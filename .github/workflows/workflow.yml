@@ -1,0 +1,40 @@
+name: Run Press Review Script
+
+on:
+  schedule:
+    - cron: "0 7 * * 1,3,5"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+      GOOGLE_TOKEN_JSON: ${{ secrets.GOOGLE_TOKEN_JSON }}
+      SENDER: ${{ secrets.SENDER }}
+      RECEIVER: ${{ secrets.RECEIVER }}
+      CREDENTIALS_FILE: credentials.json
+      TOKEN_FILE: token.json
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Recreate credential files
+        shell: bash
+        run: |
+          printf '%s' "$GOOGLE_CREDENTIALS_JSON" > "$CREDENTIALS_FILE"
+          printf '%s' "$GOOGLE_TOKEN_JSON" > "$TOKEN_FILE"
+
+      - name: Run script
+        run: python main.py

@@ -16,6 +16,8 @@ from google import genai
 from google.genai import types
 from typing import List, Tuple
 
+
+
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 SENDER = os.environ["SENDER"]
 RECEIVER = os.environ["RECEIVER"] 
@@ -59,10 +61,13 @@ def get_service():
 
 def build_message(sender, to_list, subject, body_text=None, body_html=None, attachment_path=None):
     msg = EmailMessage()
+    # to_list = ["a@ex.com", "b@ex.com"]
     msg["To"] = to_list
     msg["From"] = sender
     msg["Subject"] = subject
 
+    # Version texte (fallback)
+    #msg.set_content(body_text or "Version texte.", subtype="plain", charset="utf-8")
         
     msg.add_alternative(body_html, subtype="html", charset="utf-8")
 
@@ -292,15 +297,26 @@ def add_sources_html_safe(html_text: str, mapping: dict) -> str:
 
 
 if __name__ == "__main__":
-    resp = generate_press_review()
-    text = resp.candidates[0].content.parts[0].text
-    dico = create_dico(resp)
-    body_html = add_sources_html_safe(text, dico)
+    last_err = None
+    for attempt in range(3):
+        try:
+            print(f"--- Tentative {attempt+1} ---")
+            resp = generate_press_review()
+            text = resp.candidates[0].content.parts[0].text
+            dico = create_dico(resp)
+            body_html = add_sources_html_safe(text, dico)
 
-    send_email(
-        sender=SENDER,
-        to=RECEIVER,
-        subject="Revue de presse des Mondes indiens – " + ajd,
-        body_html=body_html,
-        attachment_path=None
-    )
+            send_email(
+                sender=SENDER,
+                to=RECEIVER,
+                subject="Revue de presse des Mondes indiens – " + ajd,
+                body_html=body_html,
+                attachment_path=None
+            )
+            print("Succès")
+            break  # sortie de la boucle si succès
+        except Exception as e:
+            print(f"Erreur tentative {attempt+1}: {e}")
+            last_err = e
+    else:
+        raise last_err

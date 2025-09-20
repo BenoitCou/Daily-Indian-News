@@ -16,8 +16,6 @@ from google import genai
 from google.genai import types
 from typing import List, Tuple
 
-
-
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 SENDER = os.environ["SENDER"]
 RECEIVER = os.environ["RECEIVER"] 
@@ -26,6 +24,8 @@ CREDENTIALS_FILE = "credentials.json"
 TOKEN_FILE = "token.json"
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
+TAG_GAP = r"(?:\s|<[^>]+>)+"
+
 
 date = (datetime.now(timezone.utc) - timedelta(days=2)).date().isoformat()
 ajd =  datetime.now().date().isoformat() 
@@ -62,6 +62,7 @@ def build_message(sender, to_list, subject, body_text=None, body_html=None, atta
     msg["To"] = COMMASPACE.join(to_list)
     msg["From"] = sender
     msg["Subject"] = subject
+
         
     msg.add_alternative(body_html, subtype="html", charset="utf-8")
 
@@ -85,16 +86,57 @@ def send_email(sender, to, subject, body_text=None, body_html=None, attachment_p
     message = build_message(sender, to, subject, body_text, body_html, attachment_path)
     sent = service.users().messages().send(userId="me", body=message).execute()
     print(f"Message envoyé. ID: {sent['id']}")
-    
+
+
+def generate_press_review_OLD():
+    system_instruction = (
+        "You are a meticulous and precise news editor. Always use Google Search grounding, "
+        "include inline source links, and avoid unverified claims."
+    )
+
+    user_prompt = (
+        f"Ecris une revue de presse en francais et en HTML sur les actualités les plus importantes des deux derniers jours (actualites publiées après {date}) pour les pays suivants : "
+        "L'Inde, le Pakistan, le Bangladesh, le Népal, le Bouthan, le Sri Lanka et les Maldives. \n"
+        "Tu me donneras une actualité d'un des pays mentionnés ci-dessus pour chacun des thèmes suivants : "
+        "1. Unité géographique, hiérarchies et inégalités sociales"
+        "2. Ruralités et urbanités en recomposition"
+        "3. Diversité et complémentarité des systèmes productifs"
+        "4. Territoires politiques et circulations"
+        "Pour chacun de ces thèmes (que tu mettras en gras et en police 12), tu presenteras l'actualité la plus importante de la maniere suivante:" 
+        "Tu commenceras par le nom de pays suivi du titre de l'actualité (En police 10 et en italique) (Nom de pays : Titre de l'actualité)"
+        "Tu feras un resumé factuel de l'actualité en 3-4 phrases maximum en police 10 (Actualité (en italique) : Description de l'actualité (en police 10))"
+        "Tu presenteras le contexte de l'actualité en 1-2 phrases maximum en police 10 (Contexte (en italique) : Contexte de l'actualité (en police 10))"
+        "Tu concluras par une analyse des enjeux en 2-3 phrases maximum en police 10 (Enjeux (en italique) : Enjeu de l'actualité (en police 10))"
+        "Tu sauteras une ligne entre Actualité, Contexte et Enjeux, et tu sauteras deux lignes entre chaque actualité."
+        "Utilise un langage formel et objectif, sans opinions personnelles."
+        "N'utilise que des sources fiables et récentes, en citant tes sources, et verifie bien l'ensemble de ce que tu dis."
+        f"Tu commenceras toujours ton rapport par 'Bonjour Mademoiselle Dupouy (<3), voici votre revue de presse des mondes indiens (depuis le {date})' en italique HTML."
+        "Tu ne feras jamais d'introduction et n'écriras jamais de conclusion."
+    )
+
+
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        tools=[GROUNDING_TOOL],
+        temperature=0.2,
+    )
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=user_prompt,
+        config=config,
+    )
+
+    return response
 
 def generate_press_review():
     system_instruction = (
         "Tu es un éditeur de presse méticuleux. Tu dois :"
-        "- T’appuyer sur Google Search Grounding."
+        "- IMPERATIVEMENT utiliser Google Search Grounding pour vérifier chaque fait et renseigner la métadonnée de grounding."
         "- Ne produire que du HTML valide (aucun markdown, aucun texte hors balises)."
         "- Suivre STRICTEMENT le gabarit HTML et le style inline donnés ci-dessous (mêmes balises, mêmes styles, mêmes <br>)."
         "- Éviter toute opinion ; n’écrire que des faits vérifiables et récents."
-        "- Fournir des liens web de sources fiables pour chaque fait rapporté."
+        "- N'insérer AUCUN lien dans le HTML."
         "- Éviter toute introduction/conclusion autre que la ligne d’ouverture demandée."
     )
 
@@ -115,6 +157,8 @@ def generate_press_review():
                 • “Contexte” (1–2 phrases), police 10pt, avec le label « <i>Contexte</i> : »  
                 • “Enjeux” (2–3 phrases), police 10pt, avec le label « <i>Enjeux</i> : »
             - Style : langage formel, objectif. N’écris aucun avertissement.
+            - Justifications: des liens web de sources fiables pour chaque fait rapporté."
+
 
         Gabarit HTML STRICT (reproduis à l’identique les balises, styles, <br> et ponctuation ; remplace seulement les contenus entre crochets) :
 
@@ -166,7 +210,7 @@ def generate_press_review():
     config = types.GenerateContentConfig(
         system_instruction=system_instruction,
         tools=[GROUNDING_TOOL],
-        temperature=0.2,
+        temperature=0.1,
     )
 
     response = client.models.generate_content(
@@ -181,7 +225,7 @@ def add_sources(text: str, mapping: dict) -> str:
     for sentence, urls in mapping.items():
         safe_sentence = html.escape(sentence, quote=False)
         sources_html = " ".join(
-            f"<a href=\"{html.escape(u, quote=True)}\" target=\"_blank\" rel=\"noopener noreferrer\">[source]</a>"
+            f"<a href=\"{html.escape(u, quote=True)}\"target=\"_blank\" rel=\"noopener noreferrer\">[source]</a> "
             for u in urls
         )
         replacement = f"{safe_sentence} {sources_html}"
@@ -199,11 +243,59 @@ def create_dico(resp):
                 dico[resp.candidates[0].grounding_metadata.grounding_supports[k].segment.text].append(resp.candidates[0].grounding_metadata.grounding_chunks[i].web.uri)
     return dico
 
+
+def _sentence_to_pattern(sentence: str) -> str:
+
+    tokens = re.split(r"\s+", sentence.strip())
+    tokens = [t for t in tokens if t]
+    if not tokens:
+        return ""
+    esc_tokens = [re.escape(t) for t in tokens]
+    return TAG_GAP.join(esc_tokens)
+
+def add_sources_html_safe(html_text: str, mapping: dict) -> str:
+
+    out = html_text
+    for sentence, urls in mapping.items():
+        if not sentence or not urls:
+            continue
+
+        pat = _sentence_to_pattern(sentence)
+        if not pat:
+            continue
+
+        try:
+            regex = re.compile(pat, flags=re.DOTALL)
+        except re.error:
+            continue
+
+        def repl(m):
+            links = " ".join(
+                f'<a href="{html.escape(u, quote=True)}" target="_blank" rel="noopener noreferrer">[source]</a>'
+                for u in urls
+            )
+            return m.group(0) + " " + links + " "
+
+        out, n = regex.subn(repl, out, count=1)
+
+        if n == 0:
+            esc_sentence = html.escape(sentence, quote=False)
+            pat2 = _sentence_to_pattern(esc_sentence)
+            if pat2:
+                try:
+                    regex2 = re.compile(pat2, flags=re.DOTALL)
+                    out, _ = regex2.subn(repl, out, count=1)
+                except re.error:
+                    pass
+
+    return out
+
+
 if __name__ == "__main__":
     resp = generate_press_review()
     text = resp.candidates[0].content.parts[0].text
     dico = create_dico(resp)
-    body_html = add_sources(text, dico)
+    body_html = add_sources_html_safe(text, dico)
 
     send_email(
         sender=SENDER,

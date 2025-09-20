@@ -59,7 +59,7 @@ def get_service():
 
 def build_message(sender, to_list, subject, body_text=None, body_html=None, attachment_path=None):
     msg = EmailMessage()
-    msg["To"] = COMMASPACE.join(to_list)
+    msg["To"] = to_list
     msg["From"] = sender
     msg["Subject"] = subject
 

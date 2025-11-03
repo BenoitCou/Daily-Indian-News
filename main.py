@@ -119,12 +119,12 @@ def generate_press_review():
             - Style : langage formel, objectif. N’écris aucun avertissement.
             - Justifications: des liens web de sources fiables pour chaque fait rapporté.
             - Si tu ne trouves aucune actualité publiée après {date} pour une ou plusieurs des rubriques, remplace le TITRE DE L’ACTUALITÉ, 
-                le Résumé factuel en 3–4 phrases, le Contexte en 1–2 phrases et les Enjeux en 2–3 phrases par 'Aucune actualité marquante aujourd'hui'. "
+                le Résumé factuel en 3–4 phrases, le Contexte en 1–2 phrases et les Enjeux en 2–3 phrases par 'Aucune actualité marquante depuis le {date}'. "
 
 
         Gabarit HTML STRICT (reproduis à l’identique les balises, styles, <br> et ponctuation ; remplace seulement les contenus entre crochets) :
 
-        <i>INTRO (depuis le {date})</i>
+        <i>{INTRO} (depuis le {date})</i>
         <br><br>
 
         <p style="font-size:12pt; font-weight:bold;">1. Unité géographique, hiérarchies et inégalités sociales</p>

@@ -96,6 +96,7 @@ def generate_press_review():
         "- Ne produire que du HTML valide (aucun markdown, aucun texte hors balises)."
         "- Suivre STRICTEMENT le gabarit HTML et le style inline donnés ci-dessous (mêmes balises, mêmes styles, mêmes <br>)."
         "- Éviter toute opinion ; n’écrire que des faits vérifiables et récents."
+        "- Ne jamais inventer de nouvelle"
         "- N'insérer AUCUN lien dans le HTML."
         "- Éviter toute introduction/conclusion autre que la ligne d’ouverture demandée."
     )
@@ -118,9 +119,34 @@ def generate_press_review():
                 • “Enjeux” (2–3 phrases), police 10pt, avec le label « <i>Enjeux</i> : »
             - Style : langage formel, objectif. N’écris aucun avertissement.
             - Justifications: des liens web de sources fiables pour chaque fait rapporté.
-            - Si tu ne trouves aucune actualité publiée après {date} pour une ou plusieurs des rubriques, remplace le TITRE DE L’ACTUALITÉ, 
-                le Résumé factuel en 3–4 phrases, le Contexte en 1–2 phrases et les Enjeux en 2–3 phrases par 'Aucune actualité marquante depuis le {date}'. "
+            - Si tu ne trouves aucune actualité publiée après {date} pour une ou plusieurs des rubriques, supprime ces rubriques du template HTML. 
+            - N'invente jamais de nouvelle.
 
+            - Voici un détail des rubriques, qui te permettra de trouver des articles de presse adaptés. Les artciles de presse selectionnes doivent 
+                correspondre à une partie au moins de ces descriptions, mais pas nécessairement à l'intégralité:
+                - 1. Unité géographique, hiérarchies et inégalités sociales : L’unité du sous-continent indien repose sur une forte densité démographique, 
+                    une organisation territoriale centrée sur la plaque indienne et ses grands fleuves,  ainsi qu’une dépendance marquée aux régimes de mousson. 
+                    L’empreinte de la colonisation britannique perdure à travers les infrastructures et les structures sociales. Cependant, cette unité dissimule 
+                    une grande diversité linguistique, religieuse et sociale, marquée par la coexistence de multiples religions et la persistance du système des castes, 
+                    adapté à la modernité.
+                - 2. Ruralités et urbanités en recomposition : Les mondes indiens connaissent de fortes dynamiques démographiques et territoriales, marquées par une urbanisation 
+                    rapide et contrastée qui transforme les hiérarchies spatiales et les modes d’habiter. Les espaces ruraux, encore centraux, sont traversés par des 
+                    mobilités multiples et font l’objet de nouvelles recherches portant sur les migrations, la multifonctionnalité des campagnes et les enjeux environnementaux. 
+                    Ces mutations, combinant pressions démographiques, inégalités sociales et défis climatiques, génèrent de fortes vulnérabilités mais aussi des formes d’adaptation 
+                    variées face aux risques et aux contraintes territoriales.
+                - 3. Diversité et complémentarité des systèmes productifs : Depuis la libéralisation des années 1990, les mondes indiens se sont transformés en pôles économiques 
+                    majeurs intégrés à la mondialisation, portés par les technologies, les services et l’industrie pharmaceutique concentrés dans les grandes métropoles. 
+                    Cette croissance accentue les inégalités territoriales entre espaces intégrés et périphériques, où coexistent activités à haute valeur ajoutée et économies 
+                    informelles ou vulnérables. L’agriculture, toujours centrale, illustre ces contrastes avec des zones modernisées et d’autres en difficulté, malgré des politiques 
+                    et initiatives cherchant à concilier productivité, justice sociale et durabilité.
+                - 4. Territoires politiques et circulations : Les mondes indiens forment un espace politique fragmenté issu des décolonisations, où coexistent des régimes variés et 
+                    des trajectoires nationales marquées par des tensions identitaires, religieuses et territoriales. Les relations entre États, oscillant entre coopération et 
+                    rivalités géopolitiques (notamment entre l’Inde, le Pakistan et la Chine), limitent l’intégration régionale malgré des initiatives communes. Une approche 
+                    nuancée doit dépasser la seule lecture des vulnérabilités pour saisir la complexité et la dynamique d’un espace en profonde mutation, central dans les équilibres 
+                    mondiaux actuels.
+
+Les mondes indiens forment un espace politique fragmenté issu des décolonisations, où coexistent des régimes variés et des trajectoires nationales marquées par des tensions identitaires, religieuses et territoriales. Les relations entre États, oscillant entre coopération et rivalités géopolitiques (notamment entre l’Inde, le Pakistan et la Chine), limitent l’intégration régionale malgré des initiatives communes. Une approche nuancée doit dépasser la seule lecture des vulnérabilités pour saisir la complexité et la dynamique d’un espace en profonde mutation, central dans les équilibres mondiaux actuels.
+            
 
         Gabarit HTML STRICT (reproduis à l’identique les balises, styles, <br> et ponctuation ; remplace seulement les contenus entre crochets) :
 

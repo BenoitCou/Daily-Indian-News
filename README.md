@@ -92,18 +92,12 @@ git clone https://github.com/BenoitCou/Daily-Indian-News
 cd Daily-Indian-News
 pip install -r requirements.txt
 
-# Environment (example)
-export GEMINI_API_KEY="..."
-export SENDER="you@example.com"
-export RECEIVER="dest1@ex.com,dest2@ex.com"
-export INTRO="Revue de presse des Mondes indiens"
-
 python main.py
 ```
 
 What happens:
 
-1. The script calls Gemini to produce **strict HTML** (no Markdown) conforming to a fixed template.
+1. The script calls Gemini to produce **strict HTML** conforming to a fixed template.
 2. Grounded **sources** are appended after sentences as `[source]` links.
 3. An HTML email is built and **sent via Gmail** to the recipients.
 4. On failure, up to **3 attempts** are made before exiting.

@@ -198,7 +198,7 @@ Les mondes indiens forment un espace politique fragmenté issu des décolonisati
     config = types.GenerateContentConfig(
         system_instruction=system_instruction,
         tools=[GROUNDING_TOOL],
-        temperature=0.1,
+        temperature=1,
     )
 
     response = client.models.generate_content(

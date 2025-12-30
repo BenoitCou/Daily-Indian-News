@@ -17,7 +17,6 @@ from google.genai import types
 from typing import List, Tuple
 
 
-
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 SENDER = os.environ["SENDER"]
 RECEIVER = os.environ["RECEIVER"] 
@@ -28,7 +27,6 @@ TOKEN_FILE = "token.json"
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 GROUNDING_TOOL = types.Tool(google_search=types.GoogleSearch())
 TAG_GAP = r"(?:\s|<[^>]+>)+"
-
 
 date = (datetime.now(timezone.utc) - timedelta(days=2)).date().isoformat()
 ajd =  datetime.now().date().isoformat() 

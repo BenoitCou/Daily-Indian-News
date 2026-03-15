@@ -200,7 +200,7 @@ Les mondes indiens forment un espace politique fragmenté issu des décolonisati
     )
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-pro",
         contents=user_prompt,
         config=config,
     )
